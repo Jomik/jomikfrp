@@ -1,0 +1,36 @@
+{
+  "name": "jomikfrp",
+  "version": "0.0.1",
+  "description": "Purely functional reactive library.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jomik/jomikfrp.git"
+  },
+  "keywords": [
+    "frp"
+  ],
+  "author": "Jonas Holst Damtoft",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jomik/jomikfrp/issues"
+  },
+  "homepage": "https://github.com/jomik/jomikfrp#readme",
+  "devDependencies": {
+    "@types/jest": "^24.0.17",
+    "jest": "^24.8.0",
+    "np": "^5.0.3",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.3"
+  },
+  "prettier": {
+    "arrowParens": "always"
+  }
+}
