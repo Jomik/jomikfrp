@@ -12,6 +12,10 @@ export abstract class Behavior<A> {
   map<B>(fn: (a: A) => B): Behavior<B> {
     return new MapBehavior(this, fn);
   }
+
+  flatten<B>(this: Behavior<Behavior<B>>): Behavior<B> {
+    return new FlattenBehavior(this);
+  }
 }
 
 class ConstantBehavior<A> extends Behavior<A> {
@@ -44,6 +48,16 @@ class MapBehavior<A, B> extends Behavior<B> {
 
   at() {
     return this.fn(this.parent.at());
+  }
+}
+
+class FlattenBehavior<A> extends Behavior<A> {
+  constructor(private readonly parent: Behavior<Behavior<A>>) {
+    super();
+  }
+
+  at(): A {
+    return this.parent.at().at();
   }
 }
 

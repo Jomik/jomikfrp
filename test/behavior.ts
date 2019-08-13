@@ -12,23 +12,27 @@ beforeEach(() => {
 
 describe("behavior", () => {
   it("should be constant", () => {
-    const behavior = Behavior.of(42);
-    expect(behavior.at()).toBe(42);
+    const behavior = Behavior.of(1);
+    expect(behavior.at()).toBe(1);
   });
   it("should read from function", () => {
     const behavior = Behavior.from(getValue);
 
-    setValue(40);
-    expect(behavior.at()).toBe(40);
-    setValue(42);
-    expect(behavior.at()).toBe(42);
+    setValue(1);
+    expect(behavior.at()).toBe(1);
+    setValue(2);
+    expect(behavior.at()).toBe(2);
   });
-  it("should map", () => {
+  describe("map", () => {
     const behavior = Behavior.from(getValue).map((n) => n * 2);
 
-    setValue(40);
-    expect(behavior.at()).toBe(80);
-    setValue(42);
-    expect(behavior.at()).toBe(84);
+    setValue(1);
+    expect(behavior.at()).toBe(2);
+    setValue(2);
+    expect(behavior.at()).toBe(4);
+  });
+  describe("flatten", () => {
+    const behavior = Behavior.of(Behavior.of(1)).flatten();
+    expect(behavior.at()).toBe(1);
   });
 });

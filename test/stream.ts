@@ -25,7 +25,7 @@ describe("stream", () => {
 
     expect(mockListener.values).toEqual(["foo", "bar"]);
   });
-  it("should map values", () => {
+  describe("map", () => {
     const mockListener = new MockListener<number>();
     const stream = new SinkStream<number>();
     stream.map((a) => a * 2).subscribe(mockListener);
@@ -35,7 +35,7 @@ describe("stream", () => {
 
     expect(mockListener.values).toEqual([84, 86]);
   });
-  it("should filter values", () => {
+  describe("filter", () => {
     const mockListener = new MockListener<number>();
     const stream = new SinkStream<number>();
     stream.filter((a) => a <= 42).subscribe(mockListener);
