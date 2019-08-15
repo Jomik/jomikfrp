@@ -44,4 +44,20 @@ describe("future", () => {
     resolveInner(42);
     expect(mockListener.values).toEqual([42]);
   });
+  describe("lift", () => {
+    let resolve1: (value: number) => void;
+    const future1 = Future.from<number>((r) => (resolve1 = r));
+    let resolve2: (value: number) => void;
+    const future2 = Future.from<number>((r) => (resolve2 = r));
+
+    const mockListener = new MockListener<number>();
+    Future.lift((n: number, m: number) => n + m, future1, future2).subscribe(
+      mockListener
+    );
+
+    resolve1(42);
+    expect(mockListener.values).toEqual([]);
+    resolve2(42);
+    expect(mockListener.values).toEqual([84]);
+  });
 });
