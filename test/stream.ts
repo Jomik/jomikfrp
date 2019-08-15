@@ -45,4 +45,15 @@ describe("stream", () => {
 
     expect(mockListener.values).toEqual([42]);
   });
+  describe("combine", () => {
+    const mockListener = new MockListener<number>();
+    const stream1 = new SinkStream<number>();
+    const stream2 = new SinkStream<number>();
+    stream1.combine(stream2).subscribe(mockListener);
+
+    stream1.push(42);
+    stream2.push(43);
+
+    expect(mockListener.values).toEqual([42, 43]);
+  });
 });

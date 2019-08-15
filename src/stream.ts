@@ -20,6 +20,10 @@ export class Stream<A> {
   filter(fn: (a: A) => boolean): Stream<A> {
     return new FilterStream(this, fn);
   }
+
+  combine<B>(stream: Stream<B>): Stream<A | B> {
+    return new CombineStream(this, stream);
+  }
 }
 
 class MapStream<A, B> extends Stream<B> implements Listener<A> {
@@ -49,6 +53,18 @@ class FilterStream<A> extends Stream<A> implements Listener<A> {
     if (this.fn(value)) {
       this.update(value);
     }
+  }
+}
+
+class CombineStream<A, B> extends Stream<A | B> implements Listener<A | B> {
+  constructor(private readonly s1: Stream<A>, private readonly s2: Stream<B>) {
+    super();
+    this.s1.subscribe(this);
+    this.s2.subscribe(this);
+  }
+
+  notify(value: A | B): void {
+    this.update(value);
   }
 }
 
