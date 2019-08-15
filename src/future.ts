@@ -1,10 +1,12 @@
 import { Listener } from "./common";
 
+type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
 const unresolved = Symbol("unresolved_future");
+type Unresolved = typeof unresolved;
 
 export class Future<A> {
   private children: Listener<A>[] = [];
-  private _value: A | typeof unresolved = unresolved;
+  private _value: A | Unresolved = unresolved;
   get value() {
     return this._value;
   }
@@ -29,21 +31,8 @@ export class Future<A> {
     this.children = [];
   }
 
-  static from<B>(cb: (resolve: (value: B) => void) => void): Future<B> {
-    const future = new Future<B>();
-    cb(future.resolve.bind(future));
-    return future;
-  }
-
-  static lift<A extends any[], B>(
-    fn: (...args: A) => B,
-    ...args: MapFutureArray<A>
-  ): Future<B> {
-    return new LiftFuture(fn, args);
-  }
-
-  ap<B>(fn: Future<(a: A) => B>): Future<B> {
-    return this.map((value) => fn.map((f) => f(value))).flatten();
+  static of<A>(value: A): Future<A> {
+    return new ConstantFuture(value);
   }
 
   map<B>(fn: (a: A) => B): Future<B> {
@@ -52,6 +41,40 @@ export class Future<A> {
 
   flatten<B>(this: Future<Future<B>>): Future<B> {
     return new FlattenFuture(this);
+  }
+
+  static from<A>(cb: (resolve: (value: A) => void) => void): Future<A> {
+    const future = new Future<A>();
+    cb(future.resolve.bind(future));
+    return future;
+  }
+
+  flatMap<B>(fn: (a: A) => Future<B>): Future<B> {
+    return this.map(fn).flatten();
+  }
+
+  ap<B>(fn: Future<(a: A) => B>): Future<B> {
+    return this.flatMap((value) => fn.map((f) => f(value)));
+  }
+
+  static lift<A extends any[], B>(
+    fn: (...args: A) => B,
+    ...args: MapFutureArray<A>
+  ): Future<B> {
+    return args
+      .reduce(
+        (previous, current) =>
+          previous.flatMap((p) => current.map((c) => [...p, c])),
+        Future.of([])
+      )
+      .map((a) => fn(...a));
+  }
+}
+
+class ConstantFuture<A> extends Future<A> {
+  constructor(value: A) {
+    super();
+    this.resolve(value);
   }
 }
 
@@ -73,6 +96,7 @@ class FlattenFuture<A> extends Future<A> implements Listener<A> {
   private readonly outer: Listener<Future<A>> = {
     notify: (value) => value.subscribe(this)
   };
+
   constructor(private readonly parent: Future<Future<A>>) {
     super();
     this.parent.subscribe(this.outer);
@@ -83,27 +107,3 @@ class FlattenFuture<A> extends Future<A> implements Listener<A> {
   }
 }
 
-type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
-
-class LiftFuture<A extends any[], B> extends Future<B>
-  implements Listener<void> {
-  private remaining: number;
-
-  constructor(
-    private readonly fn: (...args: A) => B,
-    private readonly parents: MapFutureArray<A>
-  ) {
-    super();
-    this.remaining = this.parents.length;
-    this.parents.forEach((parent) => parent.subscribe(this));
-  }
-
-  notify(): void {
-    --this.remaining;
-    if (this.remaining === 0) {
-      this.resolve(
-        this.fn(...(this.parents.map((parent) => parent.value) as any))
-      );
-    }
-  }
-}

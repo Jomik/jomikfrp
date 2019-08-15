@@ -1,3 +1,5 @@
+type MapBehaviorArray<A> = { [k in keyof A]: Behavior<A[k]> };
+
 export abstract class Behavior<A> {
   abstract at(): A;
 
@@ -5,27 +7,37 @@ export abstract class Behavior<A> {
     return new ConstantBehavior(value);
   }
 
+  map<B>(fn: (a: A) => B): Behavior<B> {
+    return new MapBehavior(this, fn);
+  }
+
+  flatten<B>(this: Behavior<Behavior<B>>): Behavior<B> {
+    return new FlattenBehavior(this);
+  }
+
   static from<A>(fn: () => A): Behavior<A> {
-    return new FunctionBehavior(fn);
+    return Behavior.of<A>(undefined).map(fn);
+  }
+
+  flatMap<B>(fn: (a: A) => Behavior<B>): Behavior<B> {
+    return this.map(fn).flatten();
+  }
+
+  ap<B>(fn: Behavior<(a: A) => B>): Behavior<B> {
+    return this.flatMap((a) => fn.map((f) => f(a)));
   }
 
   static lift<A extends any[], B>(
     fn: (...args: A) => B,
     ...args: MapBehaviorArray<A>
   ): Behavior<B> {
-    return new LiftBehavior(fn, args);
-  }
-
-  ap<B>(fn: Behavior<(a: A) => B>): Behavior<B> {
-    return new ApBehavior<A, B>(this, fn);
-  }
-
-  map<B>(fn: (a: A) => B): Behavior<B> {
-    return this.ap(Behavior.of(fn));
-  }
-
-  flatten<B>(this: Behavior<Behavior<B>>): Behavior<B> {
-    return new FlattenBehavior(this);
+    return args
+      .reduce(
+        (previous, current) =>
+          previous.flatMap((p) => current.map((c) => [...p, c])),
+        Behavior.of([])
+      )
+      .map((a) => fn(...a));
   }
 }
 
@@ -39,13 +51,15 @@ class ConstantBehavior<A> extends Behavior<A> {
   }
 }
 
-class FunctionBehavior<A> extends Behavior<A> {
-  constructor(private readonly fn: () => A) {
+class MapBehavior<A, B> extends Behavior<B> {
+  constructor(
+    private readonly parent: Behavior<A>,
+    private readonly fn: (a: A) => B
+  ) {
     super();
   }
-
-  at() {
-    return this.fn();
+  at(): B {
+    return this.fn(this.parent.at());
   }
 }
 
@@ -59,30 +73,3 @@ class FlattenBehavior<A> extends Behavior<A> {
   }
 }
 
-class ApBehavior<A, B> extends Behavior<B> {
-  constructor(
-    private readonly parent: Behavior<A>,
-    private readonly fn: Behavior<(a: A) => B>
-  ) {
-    super();
-  }
-
-  at(): B {
-    return this.fn.at()(this.parent.at());
-  }
-}
-
-type MapBehaviorArray<A> = { [k in keyof A]: Behavior<A[k]> };
-
-class LiftBehavior<A extends any[], B> extends Behavior<B> {
-  constructor(
-    private readonly fn: (...args: A) => B,
-    private readonly parents: MapBehaviorArray<A>
-  ) {
-    super();
-  }
-
-  at(): B {
-    return this.fn(...(this.parents.map((parent) => parent.at()) as any));
-  }
-}
