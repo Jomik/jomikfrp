@@ -1,21 +1,20 @@
-import { Listener } from "./common";
+import { Listener, Target } from "./common";
 
 type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
 const unresolved = Symbol("unresolved_future");
 type Unresolved = typeof unresolved;
 
-export class Future<A> {
-  private children: Listener<A>[] = [];
+export class Future<A> extends Target<A> {
   private _value: A | Unresolved = unresolved;
   get value() {
     return this._value;
   }
 
-  subscribe(child: Listener<A>) {
+  subscribe(listener: Listener<A>) {
     if (this.value !== unresolved) {
-      child.notify(this.value);
-    } else if (!this.children.includes(child)) {
-      this.children.push(child);
+      listener.notify(this.value);
+    } else {
+      super.subscribe(listener);
     }
   }
 
@@ -27,8 +26,8 @@ export class Future<A> {
     }
 
     this._value = value;
-    this.children.forEach((child) => child.notify(value));
-    this.children = [];
+    super.notifyChildren(value);
+    this.listeners.clear();
   }
 
   static of<A>(value: A): Future<A> {

@@ -1,16 +1,18 @@
-import { Listener } from "./common";
+import { Listener, Target } from "./common";
 
-export class Stream<A> {
-  private children: Listener<A>[] = [];
+export class Stream<A> implements Target<A> {
+  private listeners: Set<Listener<A>> = new Set();
 
-  subscribe(child: Listener<A>) {
-    if (!this.children.includes(child)) {
-      this.children.push(child);
-    }
+  subscribe(listener: Listener<A>) {
+    this.listeners.add(listener);
+  }
+
+  unsubscribe(listener: Listener<A>): void {
+    this.listeners.delete(listener);
   }
 
   protected notifyChildren(value: A) {
-    this.children.forEach((child) => child.notify(value));
+    this.listeners.forEach((l) => l.notify(value));
   }
 
   map<B>(fn: (a: A) => B): Stream<B> {
