@@ -10,50 +10,72 @@ class MockListener<A> implements Listener<A> {
 
 class SinkStream<A> extends Stream<A> {
   push(value: A): void {
-    this.update(value);
+    this.notifyChildren(value);
   }
 }
 
 describe("stream", () => {
   it("should notify children", () => {
-    const mockListener = new MockListener<string>();
+    const mockListener1 = new MockListener<string>();
+    const mockListener2 = new MockListener<string>();
     const stream = new SinkStream<string>();
-    stream.subscribe(mockListener);
+    stream.subscribe(mockListener1);
+    stream.subscribe(mockListener2);
 
     stream.push("foo");
     stream.push("bar");
 
-    expect(mockListener.values).toEqual(["foo", "bar"]);
+    expect(mockListener1.values).toEqual(["foo", "bar"]);
+    expect(mockListener2.values).toEqual(["foo", "bar"]);
   });
   describe("map", () => {
-    const mockListener = new MockListener<number>();
-    const stream = new SinkStream<number>();
-    stream.map((a) => a * 2).subscribe(mockListener);
+    it("should apply the function", () => {
+      const mockListener = new MockListener<number>();
+      const stream = new SinkStream<number>();
+      stream.map((a) => a * 2).subscribe(mockListener);
 
-    stream.push(42);
-    stream.push(43);
+      stream.push(42);
+      stream.push(43);
 
-    expect(mockListener.values).toEqual([84, 86]);
+      expect(mockListener.values).toEqual([84, 86]);
+    });
   });
   describe("filter", () => {
-    const mockListener = new MockListener<number>();
-    const stream = new SinkStream<number>();
-    stream.filter((a) => a <= 42).subscribe(mockListener);
+    it("should push values that pass the filter", () => {
+      const mockListener = new MockListener<number>();
+      const stream = new SinkStream<number>();
+      stream.filter((a) => a <= 42).subscribe(mockListener);
 
-    stream.push(42);
-    stream.push(43);
+      stream.push(42);
+      stream.push(43);
 
-    expect(mockListener.values).toEqual([42]);
+      expect(mockListener.values).toEqual([42]);
+    });
   });
   describe("combine", () => {
-    const mockListener = new MockListener<number>();
-    const stream1 = new SinkStream<number>();
-    const stream2 = new SinkStream<number>();
-    stream1.combine(stream2).subscribe(mockListener);
+    it("should push values from both streams", () => {
+      const mockListener = new MockListener<number>();
+      const stream1 = new SinkStream<number>();
+      const stream2 = new SinkStream<number>();
+      stream1.combine(stream2).subscribe(mockListener);
 
-    stream1.push(42);
-    stream2.push(43);
+      stream1.push(42);
+      stream2.push(43);
 
-    expect(mockListener.values).toEqual([42, 43]);
+      expect(mockListener.values).toEqual([42, 43]);
+    });
+  });
+  describe("scan", () => {
+    it("should push accumulated value", () => {
+      const mockListener = new MockListener<number>();
+      const stream = new SinkStream<number>();
+      stream.scan((a, c) => a + c, 0).subscribe(mockListener);
+
+      stream.push(1);
+      stream.push(1);
+      stream.push(1);
+
+      expect(mockListener.values).toEqual([1, 2, 3]);
+    });
   });
 });

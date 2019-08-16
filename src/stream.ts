@@ -9,7 +9,7 @@ export class Stream<A> {
     }
   }
 
-  protected update(value: A) {
+  protected notifyChildren(value: A) {
     this.children.forEach((child) => child.notify(value));
   }
 
@@ -21,8 +21,12 @@ export class Stream<A> {
     return new FilterStream(this, fn);
   }
 
-  combine<B>(stream: Stream<B>): Stream<A | B> {
+  combine<B>(stream: Stream<A | B>): Stream<A | B> {
     return new CombineStream(this, stream);
+  }
+
+  scan<B>(fn: (accum: B, current: A) => B, initial: B): Stream<B> {
+    return new ScanStream(this, fn, initial);
   }
 }
 
@@ -36,7 +40,7 @@ class MapStream<A, B> extends Stream<B> implements Listener<A> {
   }
 
   notify(value: A) {
-    this.update(this.fn(value));
+    this.notifyChildren(this.fn(value));
   }
 }
 
@@ -51,7 +55,7 @@ class FilterStream<A> extends Stream<A> implements Listener<A> {
 
   notify(value: A) {
     if (this.fn(value)) {
-      this.update(value);
+      this.notifyChildren(value);
     }
   }
 }
@@ -64,7 +68,26 @@ class CombineStream<A, B> extends Stream<A | B> implements Listener<A | B> {
   }
 
   notify(value: A | B): void {
-    this.update(value);
+    this.notifyChildren(value);
+  }
+}
+
+class ScanStream<A, B> extends Stream<B> implements Listener<A> {
+  private accum: B;
+
+  constructor(
+    private readonly parent: Stream<A>,
+    private readonly fn: (accum: B, current: A) => B,
+    initial: B
+  ) {
+    super();
+    this.accum = initial;
+    this.parent.subscribe(this);
+  }
+
+  notify(value: A): void {
+    this.accum = this.fn(this.accum, value);
+    this.notifyChildren(this.accum);
   }
 }
 
