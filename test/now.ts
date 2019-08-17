@@ -14,7 +14,7 @@ describe("now", () => {
   });
   describe("flatten", () => {
     it("should read the inner value", () => {
-      const now = Now.of(Now.of(1)).run();
+      const now = Now.of(Now.of(1)).flatten();
       expect(now.run()).toBe(1);
     });
   });
