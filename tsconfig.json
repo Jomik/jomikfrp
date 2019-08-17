@@ -5,9 +5,12 @@
     "noImplicitAny": false,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "sourceMap": true,
-    "skipLibCheck": true
+    "sourceMap": false,
+    "skipLibCheck": true,
+    "outDir": "dist/",
+    "rootDir": "src/",
+    "declaration": true
   },
-  "include": ["src/**/*", "test/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "include": ["src"]
 }
