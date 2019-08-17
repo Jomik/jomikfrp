@@ -31,7 +31,7 @@ export class Future<A> extends Target<A> {
   }
 
   static of<A>(value: A): Future<A> {
-    return new ConstantFuture(value);
+    return new ImmediateFuture(value);
   }
 
   map<B>(fn: (a: A) => B): Future<B> {
@@ -46,6 +46,10 @@ export class Future<A> extends Target<A> {
     const future = new Future<A>();
     cb(future.resolve.bind(future));
     return future;
+  }
+
+  static fromPromise<A>(promise: Promise<A>): Future<A> {
+    return Future.from(promise.then.bind(promise));
   }
 
   flatMap<B>(fn: (a: A) => Future<B>): Future<B> {
@@ -70,7 +74,7 @@ export class Future<A> extends Target<A> {
   }
 }
 
-class ConstantFuture<A> extends Future<A> {
+class ImmediateFuture<A> extends Future<A> {
   constructor(value: A) {
     super();
     this.resolve(value);

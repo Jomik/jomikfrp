@@ -19,6 +19,18 @@ describe("future", () => {
     resolve(42);
     expect(mockListener.values).toEqual([42]);
   });
+  it("should resolve when promise does", async () => {
+    let resolve: (value: number) => void;
+    const promise = new Promise<number>((r) => (resolve = r));
+    const future = Future.fromPromise(promise);
+    const mockListener = new MockListener<number>();
+    future.subscribe(mockListener);
+
+    expect(mockListener.values).toEqual([]);
+    resolve(42);
+    await promise;
+    expect(mockListener.values).toEqual([42]);
+  });
   describe("map", () => {
     const future = Future.of(21).map((n) => n * 2);
     const mockListener = new MockListener<number>();
