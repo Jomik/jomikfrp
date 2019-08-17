@@ -69,7 +69,10 @@ describe("stream", () => {
     it("should push accumulated value", () => {
       const mockListener = new MockListener<number>();
       const stream = new SinkStream<number>();
-      stream.scan((a, c) => a + c, 0).subscribe(mockListener);
+      stream
+        .scan((a, c) => a + c, 0)
+        .at()
+        .subscribe(mockListener);
 
       stream.push(1);
       stream.push(1);
@@ -104,6 +107,27 @@ describe("stream", () => {
       expect(behavior.at()).toBe(2);
       stream.push(3);
       expect(behavior.at()).toBe(3);
+    });
+  });
+  describe("next", () => {
+    it("should resolve with next value", () => {
+      const stream = new SinkStream<number>();
+      const future = stream.next().at();
+      const mockListener = new MockListener<number>();
+      future.subscribe(mockListener);
+
+      stream.push(42);
+      expect(mockListener.values).toEqual([42]);
+      stream.push(42);
+    });
+    it("should unsubscribe once resolved", () => {
+      const stream = new SinkStream<number>();
+      const future = stream.next().at();
+      const mockListener = new MockListener<number>();
+      future.subscribe(mockListener);
+
+      stream.push(42);
+      expect(() => stream.push(42)).not.toThrow();
     });
   });
 });

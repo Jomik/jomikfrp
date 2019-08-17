@@ -1,4 +1,5 @@
-import { Listener, Stream } from ".";
+import { Listener } from "./common";
+import { Stream } from "./stream";
 
 type MapBehaviorArray<A> = { [k in keyof A]: Behavior<A[k]> };
 
@@ -42,12 +43,11 @@ export abstract class Behavior<A> {
       .map((a) => fn(...a));
   }
 
-  static accum<A, B>(
-    fn: (accum: B, current: A) => B,
-    initial: B,
-    stream: Stream<A>
-  ) {
-    return new InactiveBehavior(AccumBehavior, stream, fn, initial);
+  static latestFromStream<A>(
+    stream: Stream<A>,
+    initial: A
+  ): Behavior<Behavior<A>> {
+    return Behavior.from(() => new LatestFromStreamBehavior(stream, initial));
   }
 }
 
@@ -73,38 +73,20 @@ class FlatMapBehavior<A, B> extends Behavior<B> {
   }
 }
 
-class InactiveBehavior<
-  A extends Behavior<any>,
-  B extends new (...args: any[]) => A
-> extends Behavior<A> {
-  private readonly args: ConstructorParameters<B>;
-  constructor(private readonly cons: B, ...args: ConstructorParameters<B>) {
-    super();
-    this.args = args;
-  }
+class LatestFromStreamBehavior<A> extends Behavior<A> implements Listener<A> {
+  private last: A;
 
-  at(): A {
-    return new this.cons(...this.args);
-  }
-}
-
-class AccumBehavior<A, B> extends Behavior<B> implements Listener<A> {
-  private last: B;
-  constructor(
-    private readonly parent: Stream<A>,
-    private readonly fn: (accum: B, current: A) => B,
-    initial: B
-  ) {
+  constructor(private readonly parent: Stream<A>, initial: A) {
     super();
     this.last = initial;
     this.parent.subscribe(this);
   }
 
   notify(value: A): void {
-    this.last = this.fn(this.last, value);
+    this.last = value;
   }
 
-  at(): B {
+  at(): A {
     return this.last;
   }
 }

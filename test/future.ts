@@ -31,6 +31,15 @@ describe("future", () => {
     await promise;
     expect(mockListener.values).toEqual([42]);
   });
+  it("should throw if resolved twice", () => {
+    let resolve: (value: number) => void;
+    const future = Future.from<number>((r) => (resolve = r));
+    const mockListener = new MockListener<number>();
+    future.subscribe(mockListener);
+
+    resolve(42);
+    expect(() => resolve(42)).toThrow();
+  });
   describe("map", () => {
     const future = Future.of(21).map((n) => n * 2);
     const mockListener = new MockListener<number>();

@@ -1,4 +1,6 @@
 import { Listener, Target } from "./common";
+import { Behavior } from "./behavior";
+import { Stream } from "./stream";
 
 type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
 const unresolved = Symbol("unresolved_future");
@@ -72,6 +74,10 @@ export class Future<A> extends Target<A> {
       )
       .map((a) => fn(...a));
   }
+
+  static nextFromStream<A>(stream: Stream<A>): Behavior<Future<A>> {
+    return Behavior.from(() => new NextFromStreamFuture(stream));
+  }
 }
 
 class ImmediateFuture<A> extends Future<A> {
@@ -99,3 +105,14 @@ class FlatMapFuture<A, B> extends Future<B> implements Listener<B> {
   }
 }
 
+class NextFromStreamFuture<A> extends Future<A> implements Listener<A> {
+  constructor(private readonly parent: Stream<A>) {
+    super();
+    this.parent.subscribe(this);
+  }
+
+  notify(value: A): void {
+    this.resolve(value);
+    this.parent.unsubscribe(this);
+  }
+}
