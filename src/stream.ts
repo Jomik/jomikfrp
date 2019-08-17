@@ -11,7 +11,7 @@ export abstract class Stream<A> extends Target<A> {
     return new FilterStream(this, fn);
   }
 
-  combine<B>(stream: Stream<A | B>): Stream<A | B> {
+  combine<B>(stream: Stream<B>): Stream<A | B> {
     return new CombineStream(this, stream);
   }
 

@@ -86,4 +86,18 @@ describe("future", () => {
       expect(mockListener.values).toEqual([30]);
     });
   });
+  describe("combine", () => {
+    it("should resolve with the first future", () => {
+      const future = Future.of(1).combine(Future.from(() => {}));
+      const mockListener = new MockListener<number>();
+      future.subscribe(mockListener);
+      expect(mockListener.values).toEqual([1]);
+    });
+    it("should resolve with the second future", () => {
+      const future = Future.from(() => {}).combine(Future.of(2));
+      const mockListener = new MockListener<number>();
+      future.subscribe(mockListener);
+      expect(mockListener.values).toEqual([2]);
+    });
+  });
 });

@@ -75,6 +75,10 @@ export class Future<A> extends Target<A> {
       .map((a) => fn(...a));
   }
 
+  combine<B>(future: Future<B>): Future<A | B> {
+    return new CombineFuture(this, future);
+  }
+
   static nextFromStream<A>(stream: Stream<A>): Behavior<Future<A>> {
     return Behavior.from(() => new NextFromStreamFuture(stream));
   }
@@ -103,6 +107,20 @@ class FlatMapFuture<A, B> extends Future<B> implements Listener<B> {
   }
 }
 
+class CombineFuture<A, B> extends Future<A | B> implements Listener<A | B> {
+  constructor(private readonly f1: Future<A>, private readonly f2: Future<B>) {
+    super();
+    this.f1.subscribe(this);
+    this.f2.subscribe(this);
+  }
+
+  notify(value: A | B): void {
+    this.f1.unsubscribe(this);
+    this.f2.unsubscribe(this);
+    this.resolve(value);
+  }
+}
+
 class NextFromStreamFuture<A> extends Future<A> implements Listener<A> {
   constructor(private readonly parent: Stream<A>) {
     super();
@@ -110,7 +128,7 @@ class NextFromStreamFuture<A> extends Future<A> implements Listener<A> {
   }
 
   notify(value: A): void {
-    this.resolve(value);
     this.parent.unsubscribe(this);
+    this.resolve(value);
   }
 }
