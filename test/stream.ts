@@ -40,6 +40,18 @@ describe("stream", () => {
       expect(mockListener.values).toEqual([84, 86]);
     });
   });
+  describe("mapTo", () => {
+    it("should push the value", () => {
+      const mockListener = new MockListener<number>();
+      const stream = new SinkStream<number>();
+      stream.mapTo(2).subscribe(mockListener);
+
+      stream.push(42);
+      stream.push(43);
+
+      expect(mockListener.values).toEqual([2, 2]);
+    });
+  });
   describe("filter", () => {
     it("should push values that pass the filter", () => {
       const mockListener = new MockListener<number>();

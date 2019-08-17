@@ -1,5 +1,6 @@
 import { Listener, Target } from "./common";
-import { Behavior, Future } from ".";
+import { Behavior } from "./behavior";
+import { Future } from "./future";
 
 export abstract class Stream<A> extends Target<A> {
   map<B>(fn: (a: A) => B): Stream<B> {
@@ -12,6 +13,10 @@ export abstract class Stream<A> extends Target<A> {
 
   combine<B>(stream: Stream<A | B>): Stream<A | B> {
     return new CombineStream(this, stream);
+  }
+
+  mapTo<B>(value: B): Stream<B> {
+    return this.map(() => value);
   }
 
   scan<B>(fn: (accum: B, current: A) => B, initial: B): Behavior<Stream<B>> {
