@@ -1,20 +1,7 @@
 import { Listener, Target } from "./common";
+import { Behavior } from ".";
 
-export class Stream<A> implements Target<A> {
-  private listeners: Set<Listener<A>> = new Set();
-
-  subscribe(listener: Listener<A>) {
-    this.listeners.add(listener);
-  }
-
-  unsubscribe(listener: Listener<A>): void {
-    this.listeners.delete(listener);
-  }
-
-  protected notifyChildren(value: A) {
-    this.listeners.forEach((l) => l.notify(value));
-  }
-
+export abstract class Stream<A> extends Target<A> {
   map<B>(fn: (a: A) => B): Stream<B> {
     return new MapStream(this, fn);
   }
@@ -29,6 +16,14 @@ export class Stream<A> implements Target<A> {
 
   scan<B>(fn: (accum: B, current: A) => B, initial: B): Stream<B> {
     return new ScanStream(this, fn, initial);
+  }
+
+  accum<B>(fn: (accum: B, current: A) => B, initial: B): Behavior<Behavior<B>> {
+    return Behavior.accum(fn, initial, this);
+  }
+
+  latest(initial: A): Behavior<Behavior<A>> {
+    return this.accum((_, c) => c, initial);
   }
 }
 
@@ -75,7 +70,7 @@ class CombineStream<A, B> extends Stream<A | B> implements Listener<A | B> {
 }
 
 class ScanStream<A, B> extends Stream<B> implements Listener<A> {
-  private accum: B;
+  private last: B;
 
   constructor(
     private readonly parent: Stream<A>,
@@ -83,13 +78,13 @@ class ScanStream<A, B> extends Stream<B> implements Listener<A> {
     initial: B
   ) {
     super();
-    this.accum = initial;
+    this.last = initial;
     this.parent.subscribe(this);
   }
 
   notify(value: A): void {
-    this.accum = this.fn(this.accum, value);
-    this.notifyChildren(this.accum);
+    this.last = this.fn(this.last, value);
+    this.notifyChildren(this.last);
   }
 }
 

@@ -78,4 +78,32 @@ describe("stream", () => {
       expect(mockListener.values).toEqual([1, 2, 3]);
     });
   });
+  describe("accum", () => {
+    it("should contain accumulated value", () => {
+      const stream = new SinkStream<number>();
+      const behavior = stream.accum((c, a) => c + a, 0).at();
+
+      expect(behavior.at()).toBe(0);
+      stream.push(1);
+      expect(behavior.at()).toBe(1);
+      stream.push(1);
+      expect(behavior.at()).toBe(2);
+      stream.push(1);
+      expect(behavior.at()).toBe(3);
+    });
+  });
+  describe("latest", () => {
+    it("should contain latest value", () => {
+      const stream = new SinkStream<number>();
+      const behavior = stream.latest(0).at();
+
+      expect(behavior.at()).toBe(0);
+      stream.push(1);
+      expect(behavior.at()).toBe(1);
+      stream.push(2);
+      expect(behavior.at()).toBe(2);
+      stream.push(3);
+      expect(behavior.at()).toBe(3);
+    });
+  });
 });

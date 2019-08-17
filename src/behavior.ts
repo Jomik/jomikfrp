@@ -1,3 +1,5 @@
+import { Listener, Stream } from ".";
+
 type MapBehaviorArray<A> = { [k in keyof A]: Behavior<A[k]> };
 
 export abstract class Behavior<A> {
@@ -39,6 +41,14 @@ export abstract class Behavior<A> {
       )
       .map((a) => fn(...a));
   }
+
+  static accum<A, B>(
+    fn: (accum: B, current: A) => B,
+    initial: B,
+    stream: Stream<A>
+  ) {
+    return new InactiveBehavior(AccumBehavior, stream, fn, initial);
+  }
 }
 
 class ConstantBehavior<A> extends Behavior<A> {
@@ -73,3 +83,38 @@ class FlattenBehavior<A> extends Behavior<A> {
   }
 }
 
+class InactiveBehavior<
+  A extends Behavior<any>,
+  B extends new (...args: any[]) => A
+> extends Behavior<A> {
+  private readonly args: ConstructorParameters<B>;
+  constructor(private readonly cons: B, ...args: ConstructorParameters<B>) {
+    super();
+    this.args = args;
+  }
+
+  at(): A {
+    return new this.cons(...this.args);
+  }
+}
+
+class AccumBehavior<A, B> extends Behavior<B> implements Listener<A> {
+  private last: B;
+  constructor(
+    private readonly parent: Stream<A>,
+    private readonly fn: (accum: B, current: A) => B,
+    initial: B
+  ) {
+    super();
+    this.last = initial;
+    this.parent.subscribe(this);
+  }
+
+  notify(value: A): void {
+    this.last = this.fn(this.last, value);
+  }
+
+  at(): B {
+    return this.last;
+  }
+}
