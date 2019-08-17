@@ -7,16 +7,16 @@ export abstract class Now<A> {
     return new ConstantNow(value);
   }
 
+  flatMap<B>(fn: (a: A) => Now<B>): Now<B> {
+    return new FlatMapNow(this, fn);
+  }
+
   map<B>(fn: (a: A) => B): Now<B> {
-    return new MapNow(this, fn);
+    return this.flatMap((a) => Now.of(fn(a)));
   }
 
   flatten<B>(this: Now<Now<B>>): Now<B> {
-    return new FlattenNow(this);
-  }
-
-  flatMap<B>(fn: (a: A) => Now<B>): Now<B> {
-    return this.map(fn).flatten();
+    return this.flatMap((a) => a);
   }
 
   ap<B>(fn: Now<(a: A) => B>): Now<B> {
@@ -47,26 +47,16 @@ class ConstantNow<A> extends Now<A> {
   }
 }
 
-class MapNow<A, B> extends Now<B> {
+class FlatMapNow<A, B> extends Now<B> {
   constructor(
     private readonly parent: Now<A>,
-    private readonly fn: (a: A) => B
+    private readonly fn: (a: A) => Now<B>
   ) {
     super();
   }
 
   run(): B {
-    return this.fn(this.parent.run());
-  }
-}
-
-class FlattenNow<A> extends Now<A> {
-  constructor(private readonly parent: Now<Now<A>>) {
-    super();
-  }
-
-  run(): A {
-    return this.parent.run().run();
+    return this.fn(this.parent.run()).run();
   }
 }
 

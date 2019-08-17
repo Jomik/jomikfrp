@@ -34,12 +34,16 @@ export class Future<A> extends Target<A> {
     return new ImmediateFuture(value);
   }
 
+  flatMap<B>(fn: (a: A) => Future<B>): Future<B> {
+    return new FlatMapFuture(this, fn);
+  }
+
   map<B>(fn: (a: A) => B): Future<B> {
-    return new MapFuture(this, fn);
+    return this.flatMap((a) => Future.of(fn(a)));
   }
 
   flatten<B>(this: Future<Future<B>>): Future<B> {
-    return new FlattenFuture(this);
+    return this.flatMap((a) => a);
   }
 
   static from<A>(cb: (resolve: (value: A) => void) => void): Future<A> {
@@ -50,10 +54,6 @@ export class Future<A> extends Target<A> {
 
   static fromPromise<A>(promise: Promise<A>): Future<A> {
     return Future.from(promise.then.bind(promise));
-  }
-
-  flatMap<B>(fn: (a: A) => Future<B>): Future<B> {
-    return this.map(fn).flatten();
   }
 
   ap<B>(fn: Future<(a: A) => B>): Future<B> {
@@ -81,31 +81,20 @@ class ImmediateFuture<A> extends Future<A> {
   }
 }
 
-class MapFuture<A, B> extends Future<B> implements Listener<A> {
-  constructor(
-    private readonly parent: Future<A>,
-    private readonly fn: (a: A) => B
-  ) {
-    super();
-    this.parent.subscribe(this);
-  }
-
-  notify(value: A): void {
-    this.resolve(this.fn(value));
-  }
-}
-
-class FlattenFuture<A> extends Future<A> implements Listener<A> {
-  private readonly outer: Listener<Future<A>> = {
-    notify: (value) => value.subscribe(this)
+class FlatMapFuture<A, B> extends Future<B> implements Listener<B> {
+  private readonly outer: Listener<A> = {
+    notify: (value) => this.fn(value).subscribe(this)
   };
 
-  constructor(private readonly parent: Future<Future<A>>) {
+  constructor(
+    private readonly parent: Future<A>,
+    private readonly fn: (a: A) => Future<B>
+  ) {
     super();
     this.parent.subscribe(this.outer);
   }
 
-  notify(value: A): void {
+  notify(value: B): void {
     this.resolve(value);
   }
 }

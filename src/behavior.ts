@@ -9,20 +9,20 @@ export abstract class Behavior<A> {
     return new ConstantBehavior(value);
   }
 
+  flatMap<B>(fn: (a: A) => Behavior<B>): Behavior<B> {
+    return new FlatMapBehavior(this, fn);
+  }
+
   map<B>(fn: (a: A) => B): Behavior<B> {
-    return new MapBehavior(this, fn);
+    return this.flatMap((a) => Behavior.of(fn(a)));
   }
 
   flatten<B>(this: Behavior<Behavior<B>>): Behavior<B> {
-    return new FlattenBehavior(this);
+    return this.flatMap((a) => a);
   }
 
   static from<A>(fn: () => A): Behavior<A> {
     return Behavior.of<A>(undefined).map(fn);
-  }
-
-  flatMap<B>(fn: (a: A) => Behavior<B>): Behavior<B> {
-    return this.map(fn).flatten();
   }
 
   ap<B>(fn: Behavior<(a: A) => B>): Behavior<B> {
@@ -61,25 +61,15 @@ class ConstantBehavior<A> extends Behavior<A> {
   }
 }
 
-class MapBehavior<A, B> extends Behavior<B> {
+class FlatMapBehavior<A, B> extends Behavior<B> {
   constructor(
     private readonly parent: Behavior<A>,
-    private readonly fn: (a: A) => B
+    private readonly fn: (a: A) => Behavior<B>
   ) {
     super();
   }
   at(): B {
-    return this.fn(this.parent.at());
-  }
-}
-
-class FlattenBehavior<A> extends Behavior<A> {
-  constructor(private readonly parent: Behavior<Behavior<A>>) {
-    super();
-  }
-
-  at(): A {
-    return this.parent.at().at();
+    return this.fn(this.parent.at()).at();
   }
 }
 
