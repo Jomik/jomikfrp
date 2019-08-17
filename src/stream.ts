@@ -19,13 +19,11 @@ export abstract class Stream<A> extends Target<A> {
   }
 
   accum<B>(fn: (accum: B, current: A) => B, initial: B): Behavior<Behavior<B>> {
-    return this.scan(fn, initial)
-      .map((s) => s.latest(initial))
-      .flatten();
+    return Behavior.accumulateFromStream(this, fn, initial);
   }
 
   latest(initial: A): Behavior<Behavior<A>> {
-    return Behavior.latestFromStream(this, initial);
+    return this.accum((_, c) => c, initial);
   }
 
   next(): Behavior<Future<A>> {

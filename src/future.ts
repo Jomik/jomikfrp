@@ -116,3 +116,4 @@ class NextFromStreamFuture<A> extends Future<A> implements Listener<A> {
     this.parent.unsubscribe(this);
   }
 }
+

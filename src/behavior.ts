@@ -43,11 +43,12 @@ export abstract class Behavior<A> {
       .map((a) => fn(...a));
   }
 
-  static latestFromStream<A>(
+  static accumulateFromStream<A, B>(
     stream: Stream<A>,
-    initial: A
-  ): Behavior<Behavior<A>> {
-    return Behavior.from(() => new LatestFromStreamBehavior(stream, initial));
+    fn: (accum: B, current: A) => B,
+    initial: B
+  ): Behavior<Behavior<B>> {
+    return Behavior.from(() => new AccumulateFromStream(stream, fn, initial));
   }
 }
 
@@ -73,20 +74,25 @@ class FlatMapBehavior<A, B> extends Behavior<B> {
   }
 }
 
-class LatestFromStreamBehavior<A> extends Behavior<A> implements Listener<A> {
-  private last: A;
+class AccumulateFromStream<A, B> extends Behavior<B> implements Listener<A> {
+  private last: B;
 
-  constructor(private readonly parent: Stream<A>, initial: A) {
+  constructor(
+    private readonly parent: Stream<A>,
+    private readonly fn: (accum: B, current: A) => B,
+    initial: B
+  ) {
     super();
     this.last = initial;
     this.parent.subscribe(this);
   }
 
   notify(value: A): void {
-    this.last = value;
+    this.last = this.fn(this.last, value);
   }
 
-  at(): A {
+  at(): B {
     return this.last;
   }
 }
+
