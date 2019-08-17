@@ -88,16 +88,14 @@ class ImmediateFuture<A> extends Future<A> {
 }
 
 class FlatMapFuture<A, B> extends Future<B> implements Listener<B> {
-  private readonly outer: Listener<A> = {
-    notify: (value) => this.fn(value).subscribe(this)
-  };
-
   constructor(
     private readonly parent: Future<A>,
     private readonly fn: (a: A) => Future<B>
   ) {
     super();
-    this.parent.subscribe(this.outer);
+    this.parent.subscribe({
+      notify: (value) => this.fn(value).subscribe(this)
+    });
   }
 
   notify(value: B): void {
@@ -116,4 +114,3 @@ class NextFromStreamFuture<A> extends Future<A> implements Listener<A> {
     this.parent.unsubscribe(this);
   }
 }
-
