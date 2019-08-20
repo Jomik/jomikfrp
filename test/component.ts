@@ -1,8 +1,18 @@
-import { Component } from "../src";
+import { Component, ComponentOutput } from "../src";
 
 const dummy = {
   appendChild: () => {}
 };
+
+class DummyComponent<A, O> extends Component<A, O> {
+  constructor(private readonly available: A, private readonly out: O) {
+    super();
+  }
+
+  render(): ComponentOutput<A, O> {
+    return { available: this.available, output: this.out };
+  }
+}
 
 describe("component", () => {
   it("should be constant", () => {
@@ -47,6 +57,26 @@ describe("component", () => {
         component2
       );
       expect(component.render(dummy).output).toBe(30);
+    });
+  });
+  describe("output", () => {
+    it("should map output", () => {
+      const component = new DummyComponent({ foo: 1 }, {}).output({
+        foo: "foo"
+      });
+      expect(component.render(dummy).output).toEqual({ foo: 1 });
+    });
+    it("should merge output", () => {
+      const component = new DummyComponent({ foo: 1 }, { bar: 42 }).output({
+        foo: "foo"
+      });
+      expect(component.render(dummy).output).toEqual({ foo: 1, bar: 42 });
+    });
+  });
+  describe("liftOutput", () => {
+    it("should map output using function", () => {
+      const component = new DummyComponent(1, undefined).liftOutput((v) => v);
+      expect(component.render(dummy).output).toBe(1);
     });
   });
 });

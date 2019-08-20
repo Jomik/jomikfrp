@@ -1,3 +1,5 @@
+import { Id, Remap } from "./common";
+
 export type ComponentOutput<A, O> = {
   available: A;
   output: O;
@@ -44,6 +46,23 @@ export abstract class Component<A, O> {
       )
       .map((a) => fn(...a));
   }
+
+  output<U extends object, P extends Record<string, keyof A>>(
+    this: Component<A, U>,
+    map: P
+  ): Component<A, Id<U & Remap<A, P>>> {
+    return this.liftOutput((available: A, current: U) => {
+      let output: Record<string, any> = { ...current };
+      for (const key in map) {
+        output[key] = available[map[key]];
+      }
+      return output as U & Remap<A, P>;
+    });
+  }
+
+  liftOutput<P>(fn: (available: A, output: O) => P): Component<A, P> {
+    return new OutputComponent(this, fn);
+  }
 }
 
 class OfComponent<O> extends Component<{}, O> {
@@ -72,3 +91,18 @@ class FlatMapComponent<A, O, P> extends Component<A, P> {
     return { available, output };
   }
 }
+
+class OutputComponent<A, O, P> extends Component<A, P> {
+  constructor(
+    private readonly component: Component<A, O>,
+    private readonly fn: (available: A, output: O) => P
+  ) {
+    super();
+  }
+
+  render(parent: ComponentAPI): ComponentOutput<A, P> {
+    const { available, output } = this.component.render(parent);
+    return { available, output: this.fn(available, output) };
+  }
+}
+

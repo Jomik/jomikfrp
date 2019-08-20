@@ -18,3 +18,9 @@ export abstract class Target<A> {
   }
 }
 
+export type Id<T extends object> = {} & { [P in keyof T]: T[P] };
+export type Remap<
+  A extends Record<string, any>,
+  B extends Record<string, keyof A>
+> = Id<{ [K in keyof B]: A[B[K]] }>;
+
