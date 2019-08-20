@@ -23,7 +23,7 @@ export abstract class Behavior<A> {
   }
 
   static from<A>(fn: () => A): Behavior<A> {
-    return Behavior.of<A>(undefined).map(fn);
+    return Behavior.of<A>(undefined as any).map(fn);
   }
 
   ap<B>(fn: Behavior<(a: A) => B>): Behavior<B> {
@@ -48,7 +48,9 @@ export abstract class Behavior<A> {
     fn: (accum: B, current: A) => B,
     initial: B
   ): Behavior<Behavior<B>> {
-    return Behavior.from(() => new AccumulateFromStream(stream, fn, initial));
+    return Behavior.from(
+      () => new AccumulateFromStreamBehavior(stream, fn, initial)
+    );
   }
 }
 
@@ -74,7 +76,8 @@ class FlatMapBehavior<A, B> extends Behavior<B> {
   }
 }
 
-class AccumulateFromStream<A, B> extends Behavior<B> implements Listener<A> {
+class AccumulateFromStreamBehavior<A, B> extends Behavior<B>
+  implements Listener<A> {
   private last: B;
 
   constructor(

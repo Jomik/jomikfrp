@@ -8,9 +8,13 @@ class MockListener<A> implements Listener<A> {
   }
 }
 
+const dummy: (value: number) => void = () => {
+  throw "Used dummy resolve";
+};
+
 describe("future", () => {
   it("should resolve with value", () => {
-    let resolve: (value: number) => void;
+    let resolve = dummy;
     const future = Future.from<number>((r) => (resolve = r));
     const mockListener = new MockListener<number>();
     future.subscribe(mockListener);
@@ -20,7 +24,7 @@ describe("future", () => {
     expect(mockListener.values).toEqual([42]);
   });
   it("should resolve when promise does", async () => {
-    let resolve: (value: number) => void;
+    let resolve = dummy;
     const promise = new Promise<number>((r) => (resolve = r));
     const future = Future.fromPromise(promise);
     const mockListener = new MockListener<number>();
@@ -32,7 +36,7 @@ describe("future", () => {
     expect(mockListener.values).toEqual([42]);
   });
   it("should throw if resolved twice", () => {
-    let resolve: (value: number) => void;
+    let resolve = dummy;
     const future = Future.from<number>((r) => (resolve = r));
     const mockListener = new MockListener<number>();
     future.subscribe(mockListener);
