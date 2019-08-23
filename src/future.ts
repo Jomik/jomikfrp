@@ -117,7 +117,9 @@ class CombineFuture<A, B> extends Future<A | B> implements Listener<A | B> {
   notify(value: A | B): void {
     this.f1.unsubscribe(this);
     this.f2.unsubscribe(this);
-    this.resolve(value);
+    if (this.value === unresolved) {
+      this.resolve(value);
+    }
   }
 }
 

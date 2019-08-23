@@ -1,30 +1,21 @@
-import { Listener, Future } from "../src";
-
-class MockListener<A> implements Listener<A> {
-  values: A[] = [];
-
-  notify(value: A): void {
-    this.values.push(value);
-  }
-}
-
-const dummy: (value: number) => void = () => {
-  throw "Used dummy resolve";
-};
+import { Future } from "../src";
+import { MockListener, SinkFuture } from "./utils";
 
 describe("future", () => {
   it("should resolve with value", () => {
-    let resolve = dummy;
-    const future = Future.from<number>((r) => (resolve = r));
+    const future = new SinkFuture<number>();
     const mockListener = new MockListener<number>();
     future.subscribe(mockListener);
 
     expect(mockListener.values).toEqual([]);
-    resolve(42);
+    future.resolve(42);
     expect(mockListener.values).toEqual([42]);
   });
   it("should resolve when promise does", async () => {
-    let resolve = dummy;
+    let resolve: (value: number) => void = () => {
+      throw "Used dummy resolve";
+    };
+
     const promise = new Promise<number>((r) => (resolve = r));
     const future = Future.fromPromise(promise);
     const mockListener = new MockListener<number>();
@@ -36,13 +27,12 @@ describe("future", () => {
     expect(mockListener.values).toEqual([42]);
   });
   it("should throw if resolved twice", () => {
-    let resolve = dummy;
-    const future = Future.from<number>((r) => (resolve = r));
+    const future = new SinkFuture<number>();
     const mockListener = new MockListener<number>();
     future.subscribe(mockListener);
 
-    resolve(42);
-    expect(() => resolve(42)).toThrow();
+    future.resolve(42);
+    expect(() => future.resolve(42)).toThrow();
   });
   describe("map", () => {
     const future = Future.of(21).map((n) => n * 2);
@@ -102,6 +92,12 @@ describe("future", () => {
       const mockListener = new MockListener<number>();
       future.subscribe(mockListener);
       expect(mockListener.values).toEqual([2]);
+    });
+    it("should resolve with only one future", () => {
+      const future = Future.of(42).combine(Future.of(43));
+      const mockListener = new MockListener<number>();
+      future.subscribe(mockListener);
+      expect(mockListener.values).toEqual([42]);
     });
   });
 });

@@ -1,18 +1,4 @@
-import { Listener, Stream } from "../src";
-
-class MockListener<A> implements Listener<A> {
-  values: A[] = [];
-
-  notify(value: A): void {
-    this.values.push(value);
-  }
-}
-
-class SinkStream<A> extends Stream<A> {
-  push(value: A): void {
-    this.notifyChildren(value);
-  }
-}
+import { MockListener, SinkStream } from "./utils";
 
 describe("stream", () => {
   it("should notify children", () => {
