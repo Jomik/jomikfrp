@@ -1,4 +1,6 @@
 import { MockListener, SinkStream } from "./utils";
+import { Component, Behavior, Future, Stream, Now } from "../src";
+import { placeholder } from "../src/placeholder";
 
 describe("stream", () => {
   it("should notify children", () => {
@@ -13,6 +15,24 @@ describe("stream", () => {
 
     expect(mockListener1.values).toEqual(["foo", "bar"]);
     expect(mockListener2.values).toEqual(["foo", "bar"]);
+  });
+  describe("it", () => {
+    it("should recognize stream", () => {
+      const b = new SinkStream();
+      expect(Stream.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        Component.of(1),
+        Behavior.of(42),
+        placeholder(),
+        Future.of(1),
+        Now.of(42),
+        {}
+      ]) {
+        expect(Stream.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("map", () => {
     it("should apply the function", () => {

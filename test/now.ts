@@ -1,9 +1,28 @@
-import { Now } from "../src";
+import { Now, Component, Behavior } from "../src";
+import { placeholder } from "../src/placeholder";
+import { SinkStream } from "./utils";
 
 describe("now", () => {
   it("should be constant", () => {
     const now = Now.of(1);
     expect(now.run()).toBe(1);
+  });
+  describe("it", () => {
+    it("should recognize now", () => {
+      const b = Now.of(42);
+      expect(Now.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        new SinkStream(),
+        Behavior.of(42),
+        placeholder(),
+        Component.of(1),
+        {}
+      ]) {
+        expect(Now.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("map", () => {
     it("should apply the function", () => {
@@ -42,4 +61,3 @@ describe("now", () => {
     });
   });
 });
-

@@ -1,7 +1,15 @@
 type MapNowArray<A> = { [k in keyof A]: Now<A[k]> };
 
+const nowType = Symbol("now");
+
 export abstract class Now<A> {
   abstract run(): A;
+
+  frpType = nowType;
+
+  static is(obj: any): obj is Now<any> {
+    return "frpType" in obj && obj.frpType === nowType;
+  }
 
   static of<A>(value: A): Now<A> {
     return new ConstantNow(value);

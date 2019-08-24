@@ -2,8 +2,12 @@ import { Listener, ListenerTarget } from "./common";
 import { Behavior } from "./behavior";
 import { Future } from "./future";
 
+const streamType = Symbol("stream");
+
 export abstract class Stream<A> implements ListenerTarget<A> {
   private listeners: Set<Listener<A>> = new Set();
+
+  frpType = streamType;
 
   subscribe(listener: Listener<A>) {
     this.listeners.add(listener);
@@ -15,6 +19,10 @@ export abstract class Stream<A> implements ListenerTarget<A> {
 
   protected notifyChildren(value: A) {
     this.listeners.forEach((l) => l.notify(value));
+  }
+
+  static is(obj: any): obj is Stream<any> {
+    return "frpType" in obj && obj.frpType === streamType;
   }
 
   map<B>(fn: (a: A) => B): Stream<B> {

@@ -1,4 +1,13 @@
-import { Component, ComponentOutput, loop, Now, Behavior } from "../src";
+import {
+  Component,
+  ComponentOutput,
+  loop,
+  Now,
+  Behavior,
+  Future
+} from "../src";
+import { placeholder } from "../src/placeholder";
+import { SinkStream } from "./utils";
 
 const dummy = {
   appendChild: () => {}
@@ -18,6 +27,24 @@ describe("component", () => {
   it("should be constant", () => {
     const component = Component.of(1);
     expect(component.render(dummy).output).toBe(1);
+  });
+  describe("it", () => {
+    it("should recognize component", () => {
+      const b = Component.of(42);
+      expect(Component.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        new SinkStream(),
+        Behavior.of(42),
+        placeholder(),
+        Future.of(1),
+        Now.of(42),
+        {}
+      ]) {
+        expect(Component.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("map", () => {
     it("should apply the function", () => {
@@ -128,4 +155,3 @@ describe("component", () => {
     });
   });
 });
-

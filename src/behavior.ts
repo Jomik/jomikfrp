@@ -3,8 +3,16 @@ import { Stream } from "./stream";
 
 type MapBehaviorArray<A> = { [k in keyof A]: Behavior<A[k]> };
 
+const behaviorType = Symbol("behavior");
+
 export abstract class Behavior<A> {
   abstract at(): A;
+
+  frpType = behaviorType;
+
+  static is(obj: any): obj is Behavior<any> {
+    return "frpType" in obj && obj.frpType === behaviorType;
+  }
 
   static of<A>(value: A): Behavior<A> {
     return new ConstantBehavior(value);

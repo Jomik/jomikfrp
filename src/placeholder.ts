@@ -7,8 +7,8 @@ const placeholderHandler: ProxyHandler<Placeholder> = {
         throw new Error("You can only replace a placeholder once.");
       }
       return target.replaceWith.bind(target);
-    } else if (property === "parent") {
-      return target.parent;
+    } else if (property === "parent" || property === "frpType") {
+      return target[property];
     } else if (target.parent !== undefined) {
       const p = target.parent[property];
       return typeof p === "function" ? p.bind(target.parent) : p;
@@ -26,7 +26,14 @@ const placeholderHandler: ProxyHandler<Placeholder> = {
   }
 };
 
+const placeholderType = Symbol("placeholder");
+
 export class Placeholder<R extends Reactive<any> = Reactive<any>> {
+  frpType = placeholderType;
+  static is(obj: any): obj is Placeholder<any> {
+    return "frpType" in obj && obj.frpType === placeholderType;
+  }
+
   parent: R | undefined = undefined;
   calls: Array<{ dummy: Placeholder; method: string; args: any[] }> = [];
   replaceWith(parent: R) {

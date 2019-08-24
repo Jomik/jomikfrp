@@ -1,5 +1,5 @@
-import { placeholder } from "../src/placeholder";
-import { Behavior, Stream, Future } from "../src";
+import { placeholder, Placeholder } from "../src/placeholder";
+import { Behavior, Stream, Future, Component, Now } from "../src";
 import { SinkStream, MockListener, SinkFuture } from "./utils";
 
 describe("placeholder", () => {
@@ -7,6 +7,24 @@ describe("placeholder", () => {
     const p = placeholder<Behavior<number>>();
     p.replaceWith(Behavior.of(2));
     expect(() => p.replaceWith(Behavior.of(2))).toThrow();
+  });
+  describe("it", () => {
+    it("should recognize placeholder", () => {
+      const b = placeholder();
+      expect(Placeholder.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        Component.of(1),
+        Behavior.of(42),
+        new SinkStream(),
+        Future.of(1),
+        Now.of(42),
+        {}
+      ]) {
+        expect(Placeholder.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("behavior", () => {
     it("can be replaced", () => {

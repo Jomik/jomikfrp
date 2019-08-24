@@ -1,5 +1,6 @@
-import { Future } from "../src";
-import { MockListener, SinkFuture } from "./utils";
+import { Future, Behavior, Component, Now } from "../src";
+import { MockListener, SinkFuture, SinkStream } from "./utils";
+import { placeholder } from "../src/placeholder";
 
 describe("future", () => {
   it("should resolve with value", () => {
@@ -33,6 +34,24 @@ describe("future", () => {
 
     future.resolve(42);
     expect(() => future.resolve(42)).toThrow();
+  });
+  describe("it", () => {
+    it("should recognize future", () => {
+      const b = Future.of(42);
+      expect(Future.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        new SinkStream(),
+        Behavior.of(42),
+        placeholder(),
+        Component.of(1),
+        Now.of(42),
+        {}
+      ]) {
+        expect(Future.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("map", () => {
     const future = Future.of(21).map((n) => n * 2);

@@ -4,12 +4,18 @@ import { Stream } from "./stream";
 
 type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
 const unresolved = Symbol("unresolved_future");
-type Unresolved = typeof unresolved;
+const futureType = Symbol("future");
 
 export class Future<A> implements ListenerTarget<A> {
-  private _value: A | Unresolved = unresolved;
+  private _value: A | typeof unresolved = unresolved;
   get value() {
     return this._value;
+  }
+
+  frpType = futureType;
+
+  static is(obj: any): obj is Future<any> {
+    return "frpType" in obj && obj.frpType === futureType;
   }
 
   private listeners: Set<Listener<A>> = new Set();

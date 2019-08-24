@@ -1,4 +1,6 @@
-import { Behavior } from "../src";
+import { Behavior, Future, Component, Now } from "../src";
+import { SinkStream } from "./utils";
+import { placeholder } from "../src/placeholder";
 
 describe("behavior", () => {
   it("should be constant", () => {
@@ -18,6 +20,24 @@ describe("behavior", () => {
     expect(behavior.at()).toBe(1);
     setValue(2);
     expect(behavior.at()).toBe(2);
+  });
+  describe("it", () => {
+    it("should recognize behavior", () => {
+      const b = Behavior.of(42);
+      expect(Behavior.is(b)).toBeTruthy();
+    });
+    it("should not recognize others", () => {
+      for (const t of [
+        new SinkStream(),
+        Future.of(42),
+        placeholder(),
+        Component.of(1),
+        Now.of(42),
+        {}
+      ]) {
+        expect(Behavior.is(t)).toBeFalsy();
+      }
+    });
   });
   describe("map", () => {
     it("should apply the function", () => {

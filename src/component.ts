@@ -13,8 +13,16 @@ type ComponentAPI = {
 
 type MapComponentArray<A> = { [k in keyof A]: Component<{}, A[k]> };
 
+const componentType = Symbol("component");
+
 export abstract class Component<A, O> {
   abstract render(parent: ComponentAPI): ComponentOutput<A, O>;
+
+  frpType = componentType;
+
+  static is(obj: any): obj is Component<any, any> {
+    return "frpType" in obj && obj.frpType === componentType;
+  }
 
   static of<P>(output: P): Component<{}, P> {
     return new OfComponent(output);
@@ -151,7 +159,7 @@ class LoopComponent<O extends ReactiveMap> extends Component<{}, O> {
       placeholders[arg].replaceWith(output[arg]);
     }
     for (const key of Object.keys(output)) {
-      if (output[key] instanceof Placeholder) {
+      if (Placeholder.is(output[key])) {
         output[key as keyof O] = (output[key] as any).parent;
       }
     }
