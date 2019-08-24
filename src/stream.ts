@@ -1,8 +1,22 @@
-import { Listener, Target } from "./common";
+import { Listener, ListenerTarget } from "./common";
 import { Behavior } from "./behavior";
 import { Future } from "./future";
 
-export abstract class Stream<A> extends Target<A> {
+export abstract class Stream<A> implements ListenerTarget<A> {
+  private listeners: Set<Listener<A>> = new Set();
+
+  subscribe(listener: Listener<A>) {
+    this.listeners.add(listener);
+  }
+
+  unsubscribe(listener: Listener<A>): void {
+    this.listeners.delete(listener);
+  }
+
+  protected notifyChildren(value: A) {
+    this.listeners.forEach((l) => l.notify(value));
+  }
+
   map<B>(fn: (a: A) => B): Stream<B> {
     return new MapStream(this, fn);
   }

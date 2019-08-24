@@ -1,4 +1,4 @@
-import { Listener, Target } from "./common";
+import { Listener, ListenerTarget } from "./common";
 import { Behavior } from "./behavior";
 import { Stream } from "./stream";
 
@@ -6,18 +6,28 @@ type MapFutureArray<A> = { [k in keyof A]: Future<A[k]> };
 const unresolved = Symbol("unresolved_future");
 type Unresolved = typeof unresolved;
 
-export class Future<A> extends Target<A> {
+export class Future<A> implements ListenerTarget<A> {
   private _value: A | Unresolved = unresolved;
   get value() {
     return this._value;
   }
 
+  private listeners: Set<Listener<A>> = new Set();
+
   subscribe(listener: Listener<A>) {
     if (this.value !== unresolved) {
       listener.notify(this.value);
     } else {
-      super.subscribe(listener);
+      this.listeners.add(listener);
     }
+  }
+
+  unsubscribe(listener: Listener<A>): void {
+    this.listeners.delete(listener);
+  }
+
+  protected notifyChildren(value: A) {
+    this.listeners.forEach((l) => l.notify(value));
   }
 
   protected resolve(value: A) {
@@ -28,7 +38,7 @@ export class Future<A> extends Target<A> {
     }
 
     this._value = value;
-    super.notifyChildren(value);
+    this.notifyChildren(value);
     this.listeners.clear();
   }
 

@@ -6,20 +6,10 @@ export interface Listener<A> {
   notify(value: A): void;
 }
 
-export abstract class Target<A> {
-  protected listeners: Set<Listener<A>> = new Set();
+export interface ListenerTarget<A> {
+  subscribe(listener: Listener<A>): void;
 
-  subscribe(listener: Listener<A>) {
-    this.listeners.add(listener);
-  }
-
-  unsubscribe(listener: Listener<A>): void {
-    this.listeners.delete(listener);
-  }
-
-  protected notifyChildren(value: A) {
-    this.listeners.forEach((l) => l.notify(value));
-  }
+  unsubscribe(listener: Listener<A>): void;
 }
 
 export type Reactive<A> = Behavior<A> | Future<A> | Stream<A>;
