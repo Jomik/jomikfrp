@@ -3,5 +3,5 @@ export { Stream } from "./stream";
 export { Listener } from "./common";
 export { Future } from "./future";
 export { Now } from "./now";
-export { Component, ComponentOutput } from "./component";
+export { Component, ComponentOutput, loop } from "./component";
 

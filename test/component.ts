@@ -1,4 +1,4 @@
-import { Component, ComponentOutput } from "../src";
+import { Component, ComponentOutput, loop, Now, Behavior } from "../src";
 
 const dummy = {
   appendChild: () => {}
@@ -79,4 +79,53 @@ describe("component", () => {
       expect(component.render(dummy).output).toBe(1);
     });
   });
+  describe("loop", () => {
+    it("should run without input", () => {
+      const component = loop(() =>
+        Now.of(new DummyComponent({}, { a: Behavior.of(1) }))
+      );
+      expect(component.render(dummy).output.a.at()).toBe(1);
+    });
+    it("should pass output to input", () => {
+      const component = loop<{ looped: Behavior<number>; a: Behavior<number> }>(
+        ({ looped }) =>
+          Now.of(
+            new DummyComponent(
+              {},
+              { looped: Behavior.of(2), a: looped.map((v) => v + 40) }
+            )
+          )
+      );
+      expect(component.render(dummy).output.a.at()).toBe(42);
+    });
+    it("should throw if all output isn't given", () => {
+      const component = loop<{ looped: Behavior<number>; a: Behavior<number> }>(
+        ({ looped }) => {
+          const a = looped.map((v) => v + 40);
+          return Now.of(new DummyComponent({}, { a } as any));
+        }
+      );
+      expect(() => component.render(dummy)).toThrow();
+    });
+    it("should not output placeholders", () => {
+      const component = loop<{ looped: Behavior<number>; a: Behavior<number> }>(
+        ({ looped }) => {
+          const a = looped.map((v) => v + 40).map((v) => v * 2);
+          return Now.of(
+            new DummyComponent(
+              {},
+              {
+                looped: Behavior.of(2),
+                a
+              }
+            )
+          );
+        }
+      );
+      const { output } = component.render(dummy);
+      expect(output.looped).toBeInstanceOf(Behavior);
+      expect(output.a).toBeInstanceOf(Behavior);
+    });
+  });
 });
+

@@ -1,4 +1,6 @@
-import { Id, Remap } from "./common";
+import { Id, Remap, Reactive } from "./common";
+import { Now } from "./now";
+import { placeholder, Placeholder } from "./placeholder";
 
 export type ComponentOutput<A, O> = {
   available: A;
@@ -103,6 +105,57 @@ class OutputComponent<A, O, P> extends Component<A, P> {
   render(parent: ComponentAPI): ComponentOutput<A, P> {
     const { available, output } = this.component.render(parent);
     return { available, output: this.fn(available, output) };
+  }
+}
+
+export function loop<O extends ReactiveMap>(
+  fn: (output: O) => Now<Component<{}, O>>
+) {
+  return new LoopComponent(fn);
+}
+
+const placeholderProxyHandler: ProxyHandler<PlaceholderMap> = {
+  get: (target, name: string): Reactive<any> => {
+    if (!(name in target)) {
+      target[name] = placeholder();
+    }
+    return target[name];
+  }
+};
+
+type ReactiveMap = {
+  [key: string]: Reactive<any>;
+};
+
+type PlaceholderMap<O extends ReactiveMap = ReactiveMap> = O & {
+  [key: string]: ReturnType<typeof placeholder>;
+};
+
+export function placeholderMap<O extends ReactiveMap>() {
+  return new Proxy({}, placeholderProxyHandler) as PlaceholderMap<O>;
+}
+
+class LoopComponent<O extends ReactiveMap> extends Component<{}, O> {
+  constructor(private readonly fn: (output: O) => Now<Component<{}, O>>) {
+    super();
+  }
+
+  render(parent: ComponentAPI): ComponentOutput<{}, O> {
+    const placeholders = placeholderMap<O>();
+    const child = this.fn(placeholders).run();
+    const { output } = child.render(parent);
+    for (const arg of Object.keys(placeholders)) {
+      if (output[arg] === undefined) {
+        throw new Error(`Property ${arg} is missing in component output.`);
+      }
+      placeholders[arg].replaceWith(output[arg]);
+    }
+    for (const key of Object.keys(output)) {
+      if (output[key] instanceof Placeholder) {
+        output[key as keyof O] = (output[key] as any).parent;
+      }
+    }
+    return { available: {}, output };
   }
 }
 
