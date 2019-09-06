@@ -1,6 +1,7 @@
 import { Id, Remap, Reactive } from "./common";
 import { Now } from "./now";
 import { placeholder, Placeholder } from "./placeholder";
+import { Behavior } from "./behavior";
 
 export type ComponentOutput<A, O> = {
   available: A;
@@ -167,3 +168,65 @@ class LoopComponent<O extends ReactiveMap> extends Component<{}, O> {
   }
 }
 
+type Merge<A extends object, B extends object> = Id<
+  Pick<A, Exclude<keyof A, keyof B>> & B
+>;
+
+type C<O = any> = Component<any, O>;
+type CO<A extends C> = A extends Component<any, infer O> ? O : never;
+type MC<C1 extends C, C2 extends C> = Component<{}, Merge<CO<C1>, CO<C2>>>;
+
+// prettier-ignore
+type ArrayToComponent<A extends Array<C>> =
+    A extends [C] ? A[0]
+  : A extends [C, C] ? MC<A[0], A[1]>
+  : A extends [C, C, C] ? MC<A[0], MC<A[1], A[2]>>
+  : A extends [C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], A[3]>>>
+  : A extends [C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], A[4]>>>>
+  : A extends [C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], A[5]>>>>>
+  : A extends [C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], A[6]>>>>>>
+  : A extends [C, C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], MC<A[6], A[7]>>>>>>>
+  : A extends [C, C, C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], MC<A[6], MC<A[7], A[8]>>>>>>>>
+  : A extends [C, C, C, C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], MC<A[6], MC<A[7], MC<A[8], A[9]>>>>>>>>>
+  : A extends [C, C, C, C, C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], MC<A[6], MC<A[7], MC<A[8], MC<A[9], A[10]>>>>>>>>>>
+  : A extends [C, C, C, C, C, C, C, C, C, C, C, C] ? MC<A[0], MC<A[1], MC<A[2], MC<A[3], MC<A[4], MC<A[5], MC<A[6], MC<A[7], MC<A[8], MC<A[9], MC<A[10], A[11]>>>>>>>>>>>
+  : Component<{}, unknown>;
+
+type ComponentArray =
+  | [C]
+  | [C, C]
+  | [C, C, C]
+  | [C, C, C, C]
+  | [C, C, C, C, C]
+  | [C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C, C, C, C, C]
+  | [C, C, C, C, C, C, C, C, C, C, C, C]
+  | C[];
+
+export function arrayToComponent<A extends ComponentArray>(
+  components: A
+): ArrayToComponent<A> {
+  return new ListComponent(components) as any;
+}
+
+function merge<A extends object, B extends object>(a: A, b: B): Merge<A, B> {
+  return { ...a, ...b };
+}
+
+class ListComponent extends Component<{}, any> {
+  constructor(private readonly children: Component<any, any>[]) {
+    super();
+  }
+
+  render(parent: ComponentAPI): ComponentOutput<{}, any> {
+    const output = this.children.reduce(
+      (out, current) => merge(out, current.render(parent).output),
+      {}
+    );
+    return { available: {}, output };
+  }
+}
